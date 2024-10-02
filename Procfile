@@ -1,1 +1,1 @@
-web: java -jar target/inventory.jar
+web: ./mvnw clean package && java -jar target/inventory.jar
