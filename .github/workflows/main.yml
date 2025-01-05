@@ -1,0 +1,26 @@
+name: Edit and Commit README Every 2 Minutes
+
+on:
+  schedule:
+    - cron: '0 */3 * * *'  # Runs every 3 hour
+  workflow_dispatch:  # Allows manual triggering of the workflow
+
+jobs:
+  edit-readme:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Edit README.md
+      run: |
+        echo "Random update: $(date)" >> README.md
+
+    - name: Commit changes
+      run: |
+        git config user.name "rahulrajmehra01"
+        git config user.email "rahulrajmehra06@gmail.com"
+        git add README.md
+        git commit -m "Random update: $(date)" || echo "No changes to commit"
+        git push
