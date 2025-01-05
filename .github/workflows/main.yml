@@ -1,4 +1,4 @@
-name: Edit and Commit README Every 2 Minutes
+name: README.md file
 
 on:
   schedule:
@@ -15,7 +15,7 @@ jobs:
 
     - name: Edit README.md
       run: |
-        echo "Random update: $(date)" >> README.md
+        echo " Random update: $(date)" >> README.md
 
     - name: Commit changes
       run: |
