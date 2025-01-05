@@ -2,7 +2,7 @@ name: Edit and Commit README Every 2 Minutes
 
 on:
   schedule:
-    - cron: '0 */3 * * *'  # Runs every 3 hour
+    - cron: '0 */3 * * *'
   workflow_dispatch:  # Allows manual triggering of the workflow
 
 jobs:
