@@ -15,12 +15,17 @@ jobs:
 
     - name: Edit README.md
       run: |
-        echo " Random update: $(date)" >> README.md
+        # Replace or add a line with the current date and time
+        if grep -q "Random update:" README.md; then
+          sed -i "s/^Random update:.*/Random update: $(date)/" README.md
+        else
+          echo "Random update: $(date)" >> README.md
+        fi
 
     - name: Commit changes
       run: |
         git config user.name "rahulrajmehra01"
         git config user.email "rahulrajmehra06@gmail.com"
         git add README.md
-        git commit -m "Random update: $(date)" || echo "No changes to commit"
+        git commit -m "Update README.md with new timestamp" || echo "No changes to commit"
         git push
