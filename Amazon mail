@@ -1,0 +1,130 @@
+package com.rclgroup.dolphin.cargotracking.utils;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.sql.SQLException;
+import java.util.Date;
+import java.util.Properties;
+
+import javax.mail.Message;
+import javax.mail.MessagingException;
+import javax.mail.Session;
+import javax.mail.internet.AddressException;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.AWSCredentialsProvider;
+import com.amazonaws.regions.Regions;
+import com.amazonaws.services.simpleemail.AmazonSimpleEmailService;
+import com.amazonaws.services.simpleemail.AmazonSimpleEmailServiceClientBuilder;
+import com.amazonaws.services.simpleemail.model.MessageRejectedException;
+import com.amazonaws.services.simpleemail.model.RawMessage;
+import com.amazonaws.services.simpleemail.model.SendRawEmailRequest;
+
+@Component
+public class EZLMail {
+
+    private final Integer valueInteger;
+    private final Double valueDouble;
+    
+    public EZLMail(@Value("${app.example.integer-value}") Integer valueInteger,
+                   @Value("${app.example.decimal-value}") Double valueDouble) {
+       this.valueInteger = valueInteger;
+       this.valueDouble = valueDouble;
+    }
+
+	public EZLMail() {
+		this.valueInteger = null;
+		this.valueDouble = null;
+	}
+
+	@Value("${aws.secret.key}")
+	private String secretKey;
+
+	@Value("${aws.access.key}")
+	private String accessKey;
+
+	static Properties props = new Properties();
+
+	public void sendEmail(String mailTo, String ccMail, String text, String subject) throws MessageRejectedException, AddressException, MessagingException, IOException {
+
+		System.out.println("INTEGERDOUBLE : " + this.valueDouble + this.valueInteger);
+		
+		boolean isEmailSent = false;
+		boolean isProd = false;
+		Session session = Session.getDefaultInstance(props);
+		MimeMessage msg = new MimeMessage(session);
+		if (isProd) {
+			msg.setFrom(new InternetAddress("eservice@rclgroup.com"));
+		} else {
+			msg.setFrom(new InternetAddress("eservice-uat@rclgroup.com"));
+		}
+
+		msg.setRecipient(Message.RecipientType.TO, new InternetAddress(mailTo));
+		msg.setSentDate(new Date());
+		msg.setSubject(subject);
+		msg.setHeader("Mime-Version", "1.0");
+		msg.setHeader("Content-Transfer-Encoding", "quoted-printable");
+		msg.setHeader("X-Mailer", "sendhtml");
+		msg.setHeader("Content-Type", "text/html");
+		msg.setHeader("Return-Path", "bounce-eservice@rclgroup.com");
+
+		msg.setContent(text, "text/html");
+		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+		msg.writeTo(outputStream);
+		RawMessage rawMessage = new RawMessage(ByteBuffer.wrap(outputStream.toByteArray()));
+
+		// Credentials
+		try {
+			if (isProd) {
+				AmazonSimpleEmailService client = AmazonSimpleEmailServiceClientBuilder.standard()
+						.withRegion(Regions.AP_SOUTHEAST_1).build();
+				// Send Mail
+				SendRawEmailRequest rawEmailRequest = new SendRawEmailRequest(rawMessage);
+				client.sendRawEmail(rawEmailRequest);
+			} else {
+				AmazonSimpleEmailService client = AmazonSimpleEmailServiceClientBuilder.standard()
+						.withRegion(Regions.AP_SOUTHEAST_1).withCredentials(credentialsProvider).build();
+
+				SendRawEmailRequest rawEmailRequest = new SendRawEmailRequest(rawMessage);
+				client.sendRawEmail(rawEmailRequest);
+			}
+			// System.out.println(Constants.WAR_VERSION+"Email Send by AmazonWS "+isProd);
+		} catch (Exception e) {
+			e.printStackTrace();
+
+		}
+
+	}
+
+	AWSCredentialsProvider credentialsProvider = new AWSCredentialsProvider() {
+		@Override
+		public void refresh() {
+		}
+
+		@Override
+		public AWSCredentials getCredentials() {
+			return new AWSCredentials() {
+				@Override
+				public String getAWSSecretKey() {
+					return secretKey;
+				}
+
+				@Override
+				public String getAWSAccessKeyId() {
+					return accessKey;
+				}
+			};
+		}
+	};
+
+	public static void main(String[] args) throws SQLException, Exception {
+		Session session = Session.getDefaultInstance(new Properties());
+		EZLMail emailSentByAmazon = new EZLMail();
+	}
+}
